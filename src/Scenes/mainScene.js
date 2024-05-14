@@ -8,6 +8,12 @@ class mainScene extends Phaser.Scene {
     
         this.my.sprite.bullet = [];   
         this.maxBullets = 10;           // Don't create more than this many bullets
+
+        this.my.sprite.enemyBullet = [];
+
+        this.my.sprite.topRow = [];
+        this.my.sprite.midRow = [];
+        this.my.sprite.bottomRow = [];
         
         this.myScore = 0;       // record a score as a class variable
     }
@@ -16,7 +22,13 @@ class mainScene extends Phaser.Scene {
         this.load.setPath("./assets/");
         this.load.image("ship", "playerShip3_blue.png");
         this.load.image("laser", "laserBlue04.png");
+
+
         this.load.image("alienBlue", "shipBlue_manned.png"); 
+        this.load.image("alienPink", "shipPink_manned.png");
+        this.load.image("alienGreen", "shipGreen_manned.png");
+        this.load.image("alienBul", "ghost_hit.png");
+
 
         // For animation
 
@@ -45,10 +57,6 @@ class mainScene extends Phaser.Scene {
         my.sprite.ship = this.add.sprite(game.config.width/2, game.config.height - 40, "ship");
         my.sprite.ship.setScale(0.5);
 
-        my.sprite.alienBlue = this.add.sprite(game.config.width/2, 80, "alienBlue");
-        my.sprite.alienBlue.setScale(0.4);
-        my.sprite.alienBlue.scorePoints = 25;
-
         // Create white puff animation
         /*this.anims.create({
             key: "puff",
@@ -74,6 +82,8 @@ class mainScene extends Phaser.Scene {
         this.alienBlueSpeed = 3;
 
         this.playerHealth = 3;
+        this.curRound = 1;
+        this.startRound = true;
 
         document.getElementById('description').innerHTML = '<h2>Main Scene</h2>'
 
@@ -132,21 +142,61 @@ class mainScene extends Phaser.Scene {
         // update() call. 
         my.sprite.bullet = my.sprite.bullet.filter((bullet) => bullet.y > -(bullet.displayHeight/2));
 
-        // Check for collision with the alienBlue
-        for (let bullet of my.sprite.bullet) {
-            if (this.collides(my.sprite.alienBlue, bullet)) {
-                // start animation
+        for(let topEnemy of my.sprite.topRow){  
+            my.sprite.topRow = my.sprite.topRow.filter((topEnemy) => topEnemy.y > -(topEnemy.displayHeight/2));
+        }
 
+        for(let midEnemy of my.sprite.topRow){  
+            my.sprite.midRow = my.sprite.midRow.filter((midEnemy) => midEnemy.y > -(midEnemy.displayHeight/2));
+        }
+
+        for(let bottomEnemy of my.sprite.bottomRow){  
+            my.sprite.bottomRow = my.sprite.bottomRow.filter((bottomEnemy) => bottomEnemy.y > -(bottomEnemy.displayHeight/2));
+        }
+        
+
+        // Check for collision with any enemy
+        for (let bullet of my.sprite.bullet) {
+            for(let topEnemy of my.sprite.topRow){
+                if (this.collides(topEnemy, bullet)) {
+                    //this.puff = this.add.sprite(my.sprite.alienBlue.x, my.sprite.alienBlue.y, "whitePuff03").setScale(0.25).play("puff");
+                    
+                    bullet.y = -100;
+                    topEnemy.visible = false;
+                    topEnemy.y = -100;
+                    // Update score
+                    this.myScore += topEnemy.scorePoints;
+                    this.updateScore();
+    
+            }
+
+            for(let midEnemy of my.sprite.midRow){
+                if (this.collides(midEnemy, bullet)) {
+                    //this.puff = this.add.sprite(my.sprite.alienBlue.x, my.sprite.alienBlue.y, "whitePuff03").setScale(0.25).play("puff");
+                    
+                    bullet.y = -100;
+                    midEnemy.visible = false;
+                    midEnemy.y = -100;
+                    // Update score
+                    this.myScore += midEnemy.scorePoints;
+                    this.updateScore();
+    
+            }
+        }
+
+        for(let bottomEnemy of my.sprite.bottomRow){
+            if (this.collides(bottomEnemy, bullet)) {
                 //this.puff = this.add.sprite(my.sprite.alienBlue.x, my.sprite.alienBlue.y, "whitePuff03").setScale(0.25).play("puff");
                 
-                // clear out bullet -- put y offscreen, will get reaped next update
                 bullet.y = -100;
-                my.sprite.alienBlue.visible = false;
-                my.sprite.alienBlue.x = -100;
+                bottomEnemy.visible = false;
+                bottomEnemy.y = -100;
                 // Update score
-                this.myScore += my.sprite.alienBlue.scorePoints;
+                this.myScore += bottomEnemy.scorePoints;
                 this.updateScore();
 
+        }
+    }
                 /*
                 // Play sound
                 //this.sound.play("dadada", {
@@ -158,13 +208,26 @@ class mainScene extends Phaser.Scene {
                     this.my.sprite.alienBlue.x = Math.random()*config.width;
                 }, this);
                 */
-            }
         }
+    }
 
         // Make all of the bullets move
         for (let bullet of my.sprite.bullet) {
             bullet.y -= this.bulletSpeed;
         }
+
+        //HANDLING HOW ROUNDS WORK
+        if (this.startRound){
+            this.fillEnemies();
+            this.startRound = false;
+        }
+
+        if(my.sprite.topRow.length == 0 && my.sprite.midRow.length == 0 && my.sprite.bottomRow.length == 0 && this.myScore > 0){
+            this.startRound = true;
+            this.curRound += 1;
+        }
+
+        console.log(my.sprite.topRow.length);
 
     }
 
@@ -178,5 +241,51 @@ class mainScene extends Phaser.Scene {
     updateScore() {
         let my = this.my;
         my.text.score.setText("Score " + this.myScore);
+    }
+
+    fillEnemies(){
+        let my = this.my;
+        let offsetTop = 0;
+        let offsetMid = 0;
+        let offsetBottom = 0;
+        let i = 0;
+        let j = 0;
+        let k = 0;
+        //TOP ROW ENEMY SPAWNS
+        for (i < 0; i < 10; i++){
+            my.sprite.topRow.push(this.add.sprite(
+                70 + offsetTop, game.config.height/4, "alienBlue")
+            );
+            my.sprite.topRow[i].setScale(0.4);
+            my.sprite.topRow[i].scorePoints = 100;
+            offsetTop += 70;
+        }
+        //MIDDLE ROW ENEMY SPAWNS
+        for (j < 0; j < 12; j++){
+            my.sprite.midRow.push(this.add.sprite(
+                100 + offsetMid, game.config.height/2.8, "alienPink")
+            );
+            my.sprite.midRow[j].setScale(0.3);
+            my.sprite.midRow[j].scorePoints = 120;
+            offsetMid += 50;
+        }
+        
+        for (k < 0; k < 8; k++){
+            my.sprite.bottomRow.push(this.add.sprite(
+                90 + offsetBottom, game.config.height/2.1, "alienGreen")
+            );
+            my.sprite.bottomRow[k].setScale(0.4);
+            my.sprite.bottomRow[k].scorePoints = 150;
+            offsetBottom += 70;
+        }
+    }
+
+    enemyAI(){
+        let topTime = 13;
+        let midTime = 9;
+        let bottomTime = 20;
+        for (let topEnemy of my.sprite.topRow) {
+            
+        }
     }
 }
