@@ -14,9 +14,9 @@ class mainScene extends Phaser.Scene {
 
     preload() {
         this.load.setPath("./assets/");
-        this.load.image("elephant", "playerShip3_blue.png");
-        this.load.image("heart", "laserBlue04.png");
-        this.load.image("hippo", "shipBlue_manned.png");
+        this.load.image("ship", "playerShip3_blue.png");
+        this.load.image("laser", "laserBlue04.png");
+        this.load.image("alienBlue", "shipBlue_manned.png"); 
 
         // For animation
 
@@ -31,7 +31,7 @@ class mainScene extends Phaser.Scene {
         // BMFont: https://www.angelcode.com/products/bmfont/
         // Tutorial: https://dev.to/omar4ur/how-to-create-bitmap-fonts-for-phaser-js-with-bmfont-2ndc
 
-        this.load.bitmapFont("rocketSquare", "KennyRocketSquare_0.png", "KennyRocketSquare.fnt");
+        this.load.bitmapFont("honk", "Honk_0.png", "Honk.fnt");
 
         // Sound asset from the Kenny Music Jingles pack
         // https://kenney.nl/assets/music-jingles
@@ -42,15 +42,12 @@ class mainScene extends Phaser.Scene {
     create() {
         let my = this.my;
 
-        my.sprite.elephant = this.add.sprite(game.config.width/2, game.config.height - 40, "elephant");
-        my.sprite.elephant.setScale(0.25);
+        my.sprite.ship = this.add.sprite(game.config.width/2, game.config.height - 40, "ship");
+        my.sprite.ship.setScale(0.5);
 
-        my.sprite.hippo = this.add.sprite(game.config.width/2, 80, "hippo");
-        my.sprite.hippo.setScale(0.25);
-        my.sprite.hippo.scorePoints = 25;
-
-        // Notice that in this approach, we don't create any bullet sprites in create(),
-        // and instead wait until we need them, based on the number of space bar presses
+        my.sprite.alienBlue = this.add.sprite(game.config.width/2, 80, "alienBlue");
+        my.sprite.alienBlue.setScale(0.4);
+        my.sprite.alienBlue.scorePoints = 25;
 
         // Create white puff animation
         /*this.anims.create({
@@ -66,7 +63,6 @@ class mainScene extends Phaser.Scene {
             hideOnComplete: true
         });*/
 
-        // Create key objects
         this.left = this.input.keyboard.addKey("A");
         this.right = this.input.keyboard.addKey("D");
         this.space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -75,21 +71,25 @@ class mainScene extends Phaser.Scene {
         this.playerSpeed = 5;
         this.bulletSpeed = 5;
 
-        // update HTML description
+        this.alienBlueSpeed = 3;
+
+        this.playerHealth = 3;
+
         document.getElementById('description').innerHTML = '<h2>Main Scene</h2>'
 
         // Put score on screen
-        my.text.score = this.add.bitmapText(580, 0, "rocketSquare", "Score " + this.myScore);
+        my.text.score = this.add.bitmapText(10, 0, "honk", "Score " + this.myScore);
+        my.text.score.setScale(1.25);
 
-        // Put title on screen
-        this.add.text(10, 5, "Hippo Hug!", {
+        /*
+        this.add.text(10, 5, "alienBlue Hug!", {
             fontFamily: 'Times, serif',
             fontSize: 24,
             wordWrap: {
                 width: 60
             }
         });
-
+        */
     }
 
     update() {
@@ -98,25 +98,24 @@ class mainScene extends Phaser.Scene {
         // Moving left
         if (this.left.isDown) {
             // Check to make sure the sprite can actually move left
-            if (my.sprite.elephant.x > (my.sprite.elephant.displayWidth/2)) {
-                my.sprite.elephant.x -= this.playerSpeed;
+            if (my.sprite.ship.x > (my.sprite.ship.displayWidth/2)) {
+                my.sprite.ship.x -= this.playerSpeed;
             }
         }
 
         // Moving right
         if (this.right.isDown) {
             // Check to make sure the sprite can actually move right
-            if (my.sprite.elephant.x < (game.config.width - (my.sprite.elephant.displayWidth/2))) {
-                my.sprite.elephant.x += this.playerSpeed;
+            if (my.sprite.ship.x < (game.config.width - (my.sprite.ship.displayWidth/2))) {
+                my.sprite.ship.x += this.playerSpeed;
             }
         }
 
         // Check for bullet being fired
         if (Phaser.Input.Keyboard.JustDown(this.space)) {
-            // Are we under our bullet quota?
             if (my.sprite.bullet.length < this.maxBullets) {
                 my.sprite.bullet.push(this.add.sprite(
-                    my.sprite.elephant.x, my.sprite.elephant.y-(my.sprite.elephant.displayHeight/2), "heart")
+                    my.sprite.ship.x, my.sprite.ship.y-(my.sprite.ship.displayHeight/2), "laser")
                 );
             }
         }
@@ -133,19 +132,19 @@ class mainScene extends Phaser.Scene {
         // update() call. 
         my.sprite.bullet = my.sprite.bullet.filter((bullet) => bullet.y > -(bullet.displayHeight/2));
 
-        // Check for collision with the hippo
+        // Check for collision with the alienBlue
         for (let bullet of my.sprite.bullet) {
-            if (this.collides(my.sprite.hippo, bullet)) {
+            if (this.collides(my.sprite.alienBlue, bullet)) {
                 // start animation
 
-                //this.puff = this.add.sprite(my.sprite.hippo.x, my.sprite.hippo.y, "whitePuff03").setScale(0.25).play("puff");
+                //this.puff = this.add.sprite(my.sprite.alienBlue.x, my.sprite.alienBlue.y, "whitePuff03").setScale(0.25).play("puff");
                 
                 // clear out bullet -- put y offscreen, will get reaped next update
                 bullet.y = -100;
-                my.sprite.hippo.visible = false;
-                my.sprite.hippo.x = -100;
+                my.sprite.alienBlue.visible = false;
+                my.sprite.alienBlue.x = -100;
                 // Update score
-                this.myScore += my.sprite.hippo.scorePoints;
+                this.myScore += my.sprite.alienBlue.scorePoints;
                 this.updateScore();
 
                 /*
@@ -153,10 +152,10 @@ class mainScene extends Phaser.Scene {
                 //this.sound.play("dadada", {
                     //volume: 1   // Can adjust volume using this, goes from 0 to 1
                 //});
-                // Have new hippo appear after end of animation
+                // Have new alienBlue appear after end of animation
                 this.puff.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                    this.my.sprite.hippo.visible = true;
-                    this.my.sprite.hippo.x = Math.random()*config.width;
+                    this.my.sprite.alienBlue.visible = true;
+                    this.my.sprite.alienBlue.x = Math.random()*config.width;
                 }, this);
                 */
             }
